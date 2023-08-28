@@ -7,16 +7,53 @@ import {
   KeyboardAvoidingView,
   TextInput,
   Pressable,
+  Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassWord] = useState<string>("");
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem("authToken");
+        if (token) {
+          (navigation as any).replace("Main");
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    checkLoginStatus();
+  }, []);
+
+  const handleLogin = () => {
+    const user = {
+      email: email,
+      password: password,
+    };
+    axios
+      .post("http://192.168.1.6:3001/login", user)
+      .then((res) => {
+        console.log(res);
+        const token = res.data.token;
+        AsyncStorage.setItem("authToken", token);
+        Alert.alert("Login Successful");
+        (navigation as any).replace("Main");
+      })
+      .catch((error) => {
+        Alert.alert("Login Failed");
+        console.log("Login Failed", error.message);
+      });
+  };
 
   return (
     <SafeAreaView
@@ -128,6 +165,7 @@ const LoginScreen: React.FC = () => {
         <View style={{ marginTop: 80 }} />
 
         <Pressable
+          onPress={handleLogin}
           style={{
             width: 180,
             backgroundColor: "#FEBE10",
